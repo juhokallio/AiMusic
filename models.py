@@ -21,11 +21,17 @@ class MarkovChain():
             if len(memory) >= order:
                 del memory[0]
 
-    def generate(self, length):
+    def get_order(self, order, order_keeping_p):
+        while random.random() > order_keeping_p and order > 1:
+            order -= 1
+        return order
+
+    def generate(self, length, g_order=None):
         text = []
+        g_order = self.order if g_order is None else g_order
         while len(text) < length:
             text.append(None)
-            order = self.order
+            order = self.get_order(g_order, 0.8)
             candidates = None
             mass = 0
             while order > 0 and mass == 0:
