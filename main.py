@@ -26,10 +26,11 @@ def generate(note_count):
 
 
 def lilypondify(music):
+    notes = extract_notes(music)
     output = ("\score {"
               "<<"
               "{ \key c \major ")
-    for pitch, length in music:
+    for pitch, length in notes:
         output += pitch + str(int(length)) + " "
     output += ("}"
                ">>"
@@ -94,23 +95,25 @@ def extract_music(json_o):
     return music
 
 
-def extract_training():
+def extract_training(type):
     y = []
     x = []
     weights = []
     with open("ratings") as f:
         for line in f:
             o = json.loads(line)
-            music = extract_music(o["music"])
-            x.append(extract_features(music))
-            rating = int(o["rating"])
-            y.append(0 if rating < 3 else 1)
-            if rating == 1 or rating == 5:
-                weights.append(1)
-            elif rating == 3:
-                weights.append(0.15)
-            else:
-                weights.append(0.6)
+            ratings = o["rating"]
+            if type in ratings:
+                music = extract_music(o["music"])
+                x.append(extract_features(music))
+                rating = int(ratings[type])
+                y.append(0 if rating < 3 else 1)
+                if rating == 1 or rating == 5:
+                    weights.append(1)
+                elif rating == 3:
+                    weights.append(0.01)
+                else:
+                    weights.append(0.1)
     return x, y, weights
 
 
@@ -139,9 +142,10 @@ def random_motif():
     return Motif([(pitches[i], lengths[i]) for i in range(length)])
 
 
-def compose_canon(target_length):
-    clf = RandomForestClassifier()
-    clf.fit(*extract_training())
+def compose_canon(target_length, clf_types):
+    clfs = dict((t, RandomForestClassifier()) for t in clf_types)
+    for t in clf_types:
+        clfs[t].fit(*extract_training(t))
 
     # Our evaluation function
     def eval(individual):
@@ -149,14 +153,19 @@ def compose_canon(target_length):
         # evaluation criterion (thats why there is a comma).
         # TODO: different canon model
         x = extract_features(individual)
+
+        clf_p = 1
+        for t in clf_types:
+            clf_p *= clfs[t].predict_proba(x)[0][0]
+
         length_penalty = abs(len(extract_notes(individual)) - target_length) / target_length
-        return 1 + clf.predict_proba(x)[0][0] - length_penalty,
+        return clf_p * (1 - length_penalty),
 
     # We create a fitness for the individuals, because our eval-function gives us
     # "better" values the closer they are zero, we will give it weight -1.0.
     # This creates a class creator.FitnessMin(), that is from now on callable in the
     # code. (Think about Java's factories, etc.)
-    creator.create("FitnessMin", base.Fitness, weights=(2.0,))
+    creator.create("FitnessMin", base.Fitness, weights=(1.0,))
 
     # We create a class Individual, which has base type of list, it also uses our
     # just created creator.FitnessMin() class.
@@ -267,10 +276,10 @@ def compose_canon(target_length):
     stats.register("max", np.max)
 
     # Probability for crossover
-    crossover_prob = 0.5
+    crossover_prob = 0.6
 
     # Probability for mutation
-    mutation_prob = 0.5
+    mutation_prob = 0.4
 
     # Call our actual evolutionary algorithm that runs the evolution.
     # eaSimple needs toolbox to have 'evaluate', 'select', 'mate' and 'mutate'
@@ -283,22 +292,47 @@ def compose_canon(target_length):
     return hof[0]
 
 
+def get_feedback_types():
+    types = set()
+    with open("ratings") as f:
+        for line in f:
+            o = json.loads(line)
+            types.update(o["rating"].keys())
+    return list(types)
+
 def main(args):
+    feedback_types = get_feedback_types()
+
+    def collect_feedback():
+        cmd = None
+        feedback = {}
+        while cmd != "q":
+            for index, type in enumerate(feedback_types):
+                print("{}: {}".format(index, type))
+            cmd = input("Feedback? (q: quit, n: new)")
+            if cmd == "n":
+                category = input("Category name?")
+                feedback[category] = input("Rating?")
+            if cmd.isdigit():
+                numeric_cmd = int(cmd)
+                if 0 <= numeric_cmd <= len(feedback_types):
+                    feedback[feedback_types[numeric_cmd]] = input("Rating?")
+        return feedback
+
     if len(args) == 2:
         cmd = args[1]
-        if cmd == "melodytrain":
-            m = random_motif()
-            save_music_to_file(m.notes)
-            rating = input("Rating? (1-5)")
-            save_rating([m], rating)
-        elif cmd == "canoncompose":
-            m = compose_canon(60)
-            notes = extract_notes(m)
-            save_music_to_file(notes)
+        if cmd == "motivetrain":
+            m = [random_motif()]
+            save_music_to_file(m)
+            save_rating(m, collect_feedback())
+        elif cmd == "melodytrain":
+            m = compose_canon(120, feedback_types)
+            save_music_to_file(m)
+            save_rating(m, collect_feedback())
 
     else:
         print("Needs one argument")
-        print("melodytrain Train melody")
-        print("canoncompose Compose canon")
+        print("motivetrain Train short melody")
+        print("melodytrain Train longer melody")
 
 if __name__ == "__main__": main(sys.argv)

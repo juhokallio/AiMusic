@@ -81,7 +81,9 @@ def numeric_height(pitch):
     for i in range(len(pitch)):
         if pitch[-i] == "'":
             octaves_to_raise += 1
-    base = pitch[0:-octaves_to_raise]
+        if pitch[-i] == ",":
+            octaves_to_raise -= 1
+    base = pitch if octaves_to_raise == 0 else pitch[0:-octaves_to_raise]
     if base in heights:
         return heights[base] + 6 * octaves_to_raise
 
@@ -104,11 +106,37 @@ def extract_notes(music):
         notes.extend(el.notes)
     return notes
 
+def speed(notes):
+    return sum([int(length) for pitch, length in notes]) / len(notes)
+
+
+def last_note(notes):
+    for note in reversed(notes):
+        if note[0] != "r":
+            return note
+
+def first_note(notes):
+    for note in notes:
+        if note[0] != "r":
+            return note
+
+
+def end_start_height_diff(notes):
+    first = first_note(notes)
+    if first is None:
+        return 0
+    return numeric_height(first[0]) - numeric_height(last_note(notes)[0])
+
+
 def extract_features(music):
     features = []
     notes = extract_notes(music)
     features.append(len(music))
     features.append(len(notes))
     features.extend([pitch_movement_count(notes, i) / len(notes) for i in range(-5, 5)])
+    features.append(end_start_height_diff(notes))
+    features.append(speed(notes))
+    features.append(0 if notes[-1][0] == "r" else 1)
+    features.append(sum([1 for n in notes if n[0] == "r"]) / len(notes))
     
     return features
