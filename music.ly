@@ -1,1 +1,1 @@
-\score {<<{ \key c \major e16 d16 c16 b16 a16 g16 fis16 a16 }>>\midi { }\layout { }}
+\score {<<{ \key c \major g32 r32 r32 r32 c,32 r32 r32 r32 g32 r32 r32 r32 c32 r32 r32 r32 d'32 r32 r32 r32 f32 r32 r32 r32 g32 r32 r32 r32 c,32 r32 r32 r32 g32 r32 r32 r32 c32 r32 r32 r32 d'32 r32 r32 r32 f32 r32 r32 r32 g16 bes16 a16 b8 c8 d8 g16 bes16 a16 b8 c8 d8 }>>\midi { }\layout { }}
