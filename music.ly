@@ -1,1 +1,0 @@
-\score {<<{ \key c \major e8 r8 f8 r8 f8 r8 d8 r8 e16 f16 d16 e16 f16 d16 bes2 r2 r2 r2 r2 r2 r2 r2 g4 r4 r4 r4 r4 r4 r4 r4 e4 r4 r4 r4 r4 r4 r4 r4 a,2 r2 r2 r2 r2 r2 r2 r2 c4 r4 r4 r4 r4 r4 r4 r4 a4 r4 r4 r4 e16 f16 f16 d16 e16 f16 f16 d16 e16 r16 r16 r16 f16 r16 r16 r16 f16 r16 r16 r16 d16 r16 r16 r16 e16 f16 f16 d16 }>>\midi { }\layout { }}
