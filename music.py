@@ -1,6 +1,6 @@
 __author__ = 'juho'
 
-import random
+import random, math
 
 
 class Motif:
@@ -128,6 +128,25 @@ def end_start_height_diff(notes):
     return numeric_height(first[0]) - numeric_height(last_note(notes)[0])
 
 
+def note_rythm(notes, fraction):
+    pos = 0
+    hits = 0
+    count = 0
+    for pitch, length in notes:
+        if length == 0:
+            continue
+        note_length = fraction / float(length)
+        if pos % 1 == 0:
+            hits += 1
+        if math.floor(pos) != math.floor(pos + note_length):
+            count += 1
+        pos += note_length
+    if count == 0:
+        return 0
+    else:
+        return hits / count
+
+
 def extract_features(music):
     features = []
     notes = extract_notes(music)
@@ -138,5 +157,11 @@ def extract_features(music):
     features.append(speed(notes))
     features.append(0 if notes[-1][0] == "r" else 1)
     features.append(sum([1 for n in notes if n[0] == "r"]) / len(notes))
-    
+    features.append(note_rythm(notes, 32))
+    features.append(note_rythm(notes, 16))
+    features.append(note_rythm(notes, 8))
+    features.append(note_rythm(notes, 4))
+    features.append(note_rythm(notes, 2))
+    features.append(note_rythm(notes, 1))
+
     return features
