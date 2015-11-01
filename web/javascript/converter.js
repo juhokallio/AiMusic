@@ -4,6 +4,7 @@
 converter = (function(){
 
     // Key is in Lilypond form, e.g. c, c'' or c,,
+    // TODO: c# etc...
     function convertKey(key) {
         // For rests we define here only the visual position of the note
         if (key === "r") {
