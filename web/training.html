@@ -1,13 +1,15 @@
+{% load staticfiles %}
+
 <!DOCTYPE html>
 <html>
 <head lang="en">
     <meta charset="UTF-8">
     <title></title>
-    <script src="javascript/libraries/jquery-2.1.4.min.js"></script>
-    <script src="javascript/libraries/vexflow-debug.js"></script>
-    <script src="javascript/libraries/lodash.js"></script>
-    <script src="javascript/converter.js"></script>
-    <script src="javascript/training.js"></script>
+    <script src="{% static 'javascript/libraries/jquery-2.1.4.min.js' %}"></script>
+    <script src="{% static 'javascript/libraries/vexflow-debug.js' %}"></script>
+    <script src="{% static 'javascript/libraries/lodash.js' %}"></script>
+    <script src="{% static 'javascript/converter.js' %}"></script>
+    <script src="{% static 'javascript/training.js' %}"></script>
 </head>
 <body>
 <h1>Training</h1>

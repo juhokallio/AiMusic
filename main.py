@@ -158,7 +158,7 @@ def compose_music(target_length, clf_types):
         clfs[t].fit(*extract_training(t))
 
     def eval(individual):
-        x = extract_features(individual)
+        x = [extract_features(individual)]
 
         clf_p = 1
         for t in clf_types:
@@ -235,7 +235,6 @@ def compose_music(target_length, clf_types):
 
     pop = toolbox.population(n=50)
     hof = tools.HallOfFame(1)
-
 
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("avg", np.mean)
