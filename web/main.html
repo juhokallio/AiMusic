@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+
+{% load staticfiles %}
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <script src="{% static 'javascript/libraries/jquery-2.1.4.min.js' %}"></script>
+    <script src="{% static 'javascript/frontpage.js' %}"></script>
+    <title>Ai Music</title>
+</head>
+<body>
+<div class="row">
+    <div class="col-md-8">
+        <button class="btn btn-primary" type="submit" onclick="compose()">Compose</button>
+
+        <div id="composition-list">
+            <div class="composition card">
+                <h3 class="card-title">Maybe a name that the machine came up with</h3>
+                <a href="training" class="card-link">Feedback</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <h3 class="card-title">{{composer.name}}</h3>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 __author__ = 'juho'
 
-from models import MarkovChain
+from composer.mlmodels import MarkovChain
 from subprocess import call
 import re, json
 import random
@@ -9,7 +9,7 @@ from deap import base
 from deap import creator
 from deap import tools
 import numpy as np
-from music import Motif, extract_features, Variation, extract_notes
+from composer.music import Motif, extract_features, Variation, extract_notes
 import sys
 from sklearn.ensemble import RandomForestClassifier
 
