@@ -1,6 +1,6 @@
 __author__ = 'juho'
 
-from composer.mlmodels import MarkovChain
+from mlmodels import MarkovChain
 from subprocess import call
 import re, json
 import random
@@ -9,13 +9,15 @@ from deap import base
 from deap import creator
 from deap import tools
 import numpy as np
-from composer.music import Motif, extract_features, Variation, extract_notes
+from music import Motif, extract_features, Variation, extract_notes, extract_graph
 import sys
 from sklearn.ensemble import RandomForestClassifier
+import networkx as nx
+import matplotlib.pyplot as plt
 
 
-BACH_FILE = "data/bach"
-RATINGS_FILE = "data/ratings"
+BACH_FILE = "../data/bach"
+RATINGS_FILE = "../data/ratings"
 LILYPOND_OUTPUT_FILE = "music.ly"
 MIDI_OUTPUT_FILE = "music.midi"
 
@@ -310,6 +312,11 @@ def main(args):
             m = get_classic()
             save_music_to_file(m)
             save_rating(m, collect_feedback())
+        elif cmd == "bachgraph":
+            m = tokenize()
+            G = extract_graph(m)
+            nx.draw(G)
+            plt.show()
 
     else:
         print("Needs one argument")

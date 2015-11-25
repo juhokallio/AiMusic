@@ -1,6 +1,7 @@
 __author__ = 'juho'
 
 import random, math
+import networkx as nx
 
 
 class Motif:
@@ -119,6 +120,24 @@ def first_note(notes):
     for note in notes:
         if note[0] != "r":
             return note
+
+
+def extract_graph(notes):
+    G = nx.Graph()
+    for index, note in enumerate(notes):
+        pitch, length = note
+        length = "L" + length
+        G.add_node(index)
+        G.add_node(pitch)
+        G.add_node(length)
+        G.add_edge(pitch, index)
+        G.add_edge(length, index)
+        if index > 0:
+            G.add_edge(pitch, index - 1)
+            G.add_edge(length, index - 1)
+            G.add_edge(index, index - 1)
+    G.add_edge(0, len(notes) - 1)
+    return G
 
 
 def end_start_height_diff(notes):
