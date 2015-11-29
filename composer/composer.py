@@ -9,11 +9,9 @@ from deap import base
 from deap import creator
 from deap import tools
 import numpy as np
-from music import Motif, extract_features, Variation, extract_notes, extract_graph
+from music import Motif, extract_features, Variation, extract_notes, extract_graph, total_bn_score
 import sys
 from sklearn.ensemble import RandomForestClassifier
-import networkx as nx
-import matplotlib.pyplot as plt
 
 
 BACH_FILE = "../data/bach"
@@ -22,10 +20,10 @@ LILYPOND_OUTPUT_FILE = "music.ly"
 MIDI_OUTPUT_FILE = "music.midi"
 
 
-def tokenize():
+def tokenize(f_name="bach"):
     music = []
     last_length = None
-    for line in open(BACH_FILE):
+    for line in open("../data/" + f_name):
         line = line.replace("\n", "")
         for token in line.split(" "):
             parts = re.findall('\d+|\D+', token)
@@ -160,14 +158,16 @@ def compose_music(target_length, clf_types):
         clfs[t].fit(*extract_training(t))
 
     def eval(individual):
+        notes = extract_notes(individual)
+        """
         x = [extract_features(individual)]
 
         clf_p = 1
         for t in clf_types:
             clf_p *= clfs[t].predict_proba(x)[0][0]
-
-        length_penalty = abs(len(extract_notes(individual)) - target_length) / target_length
-        return clf_p * (1 - length_penalty),
+        """
+        length_penalty = abs(len(notes) - target_length) / target_length
+        return total_bn_score(notes) * (1 - length_penalty),
 
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 
@@ -186,7 +186,7 @@ def compose_music(target_length, clf_types):
     def selElitistAndTournament(individuals, k, frac_elitist, tournsize):
         return tools.selBest(individuals, int(k*frac_elitist)) + tools.selTournament(individuals, int(k*(1-frac_elitist)), tournsize=tournsize)
 
-    toolbox.register("select", selElitistAndTournament, frac_elitist=0.05 , tournsize=3)
+    toolbox.register("select", selElitistAndTournament, frac_elitist=0.05, tournsize=3)
 
     def onePointSafe(ind1, ind2):
         size = min(len(ind1), len(ind2))
@@ -209,7 +209,7 @@ def compose_music(target_length, clf_types):
 
         def add():
             r = random.random()
-            if r < 0.7:
+            if r < 0.2:
                 i = random.randint(0, len(individual) - 1)
                 individual.append(Motif(individual[i].notes))
             else:
@@ -233,9 +233,9 @@ def compose_music(target_length, clf_types):
 
     toolbox.register("mutate", mutate)
 
-    generations = 60
+    generations = 20
 
-    pop = toolbox.population(n=50)
+    pop = toolbox.population(n=30)
     hof = tools.HallOfFame(1)
 
     stats = tools.Statistics(lambda ind: ind.fitness.values)
@@ -244,8 +244,8 @@ def compose_music(target_length, clf_types):
     stats.register("min", np.min)
     stats.register("max", np.max)
 
-    crossover_prob = 0.2
-    mutation_prob = 0.8
+    crossover_prob = 0.4
+    mutation_prob = 0.6
 
     algorithms.eaSimple(pop, toolbox, crossover_prob, mutation_prob, generations, stats, halloffame=hof)
 
@@ -305,18 +305,13 @@ def main(args):
             save_music_to_file(m)
             save_rating(m, collect_feedback())
         elif cmd == "melodytrain":
-            m = compose_music(100, feedback_types)
+            m = compose_music(200, feedback_types)
             save_music_to_file(m)
             save_rating(m, collect_feedback())
         elif cmd == "classic":
             m = get_classic()
             save_music_to_file(m)
             save_rating(m, collect_feedback())
-        elif cmd == "bachgraph":
-            m = tokenize()
-            G = extract_graph(m)
-            nx.draw(G)
-            plt.show()
 
     else:
         print("Needs one argument")

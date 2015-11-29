@@ -136,7 +136,7 @@ def get_patterns(notes, index, max_length=4):
         for i in range(max(0, index - pattern_length), index + 1):
             pitch, length = notes[i]
             pitches.append(pitch)
-            lengths.append("L" + length)
+            lengths.append("L" + str(length))
         patterns.add(tuple(pitches))
         patterns.add(tuple(lengths))
     return patterns
@@ -187,7 +187,7 @@ def create_hc(G):
     partition=defaultdict(list)
     for n_i,p in zip(list(range(len(G))),membership):
         node = G.nodes()[n_i]
-        if isinstance(node, (int, long)):
+        if isinstance(node, (int)):
             partition[p].append(node)
     return list(partition.values())
 
@@ -207,19 +207,18 @@ def bn(G, d1, d2):
 
 def bn_score(G, d1, d2):
     bns = bn(G, d1, d2)
-    degree_weigth = 0.5 * sum([nx.degree(G, n) for n in bns])
+    if len(bns) == 0:
+        return 0
+    degree_weigth = 2.0 / sum([nx.degree(G, n) for n in bns])
     balance = min(len(d1), len(d2)) / float(max(len(d1), len(d2)))
     size = len(d1) + len(d2)
     return degree_weigth * balance * size
 
 
 def total_bn_score(notes):
-    G = extract_graph(notes)
-    nx.draw_networkx(G, with_labels=True)
-    plt.show()
-    bns = bn_listing(m[:100])
-    # Sum of bisociation scores seems to work quite nicely.
-    return sum([s for s, ds in bns])
+    bns = bn_listing(notes)
+    # Sum of some of the best bisociation scores seems to work quite nicely.
+    return sum([s for s, ds in bns[:10]])
 
 
 def bn_listing(notes):
