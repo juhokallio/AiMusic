@@ -2,6 +2,11 @@ __author__ = 'juho'
 
 import random, math
 import networkx as nx
+import numpy as np
+import unittest
+from scipy.cluster import hierarchy
+from scipy.spatial import distance
+from collections import defaultdict
 
 
 class Motif:
@@ -122,22 +127,111 @@ def first_note(notes):
             return note
 
 
+def get_patterns(notes, index, max_length=4):
+    patterns = set()
+    for pattern_length in range(min(max_length, index + 1)):
+        pitches = []
+        lengths = []
+        # TODO: missing as well
+        for i in range(max(0, index - pattern_length), index + 1):
+            pitch, length = notes[i]
+            pitches.append(pitch)
+            lengths.append("L" + length)
+        patterns.add(tuple(pitches))
+        patterns.add(tuple(lengths))
+    return patterns
+
+
 def extract_graph(notes):
     G = nx.Graph()
+    unused_patterns = {}
+    used_patterns = set()
     for index, note in enumerate(notes):
-        pitch, length = note
-        length = "L" + length
+        patterns = get_patterns(notes, index)
+        for p in patterns:
+            if p in unused_patterns:
+                G.add_node(p)
+                used_patterns.add(p)
+                G.add_edge(index, p)
+                G.add_edge(unused_patterns.pop(p), p)
+            elif p in used_patterns:
+                G.add_edge(index, p)
+            else:
+                unused_patterns[p] = index
+
         G.add_node(index)
-        G.add_node(pitch)
-        G.add_node(length)
-        G.add_edge(pitch, index)
-        G.add_edge(length, index)
         if index > 0:
-            G.add_edge(pitch, index - 1)
-            G.add_edge(length, index - 1)
             G.add_edge(index, index - 1)
     G.add_edge(0, len(notes) - 1)
     return G
+
+
+def create_hc(G):
+    node_idx = {}
+    for i, node in enumerate(G.nodes()):
+        node_idx[node] = i
+
+
+    """Creates hierarchical cluster of graph G from distance matrix"""
+    path_length=nx.all_pairs_shortest_path_length(G)
+    distances=np.zeros((len(G),len(G)))
+    for u,p in path_length.items():
+        for v,d in p.items():
+            distances[node_idx[u]][node_idx[v]]=d
+    # Create hierarchical cluster
+    Y=distance.squareform(distances)
+    Z=hierarchy.complete(Y)  # Creates HC using farthest point linkage
+    # This partition selection is arbitrary, for illustrive purposes
+    membership=list(hierarchy.fcluster(Z,t=1.15))
+    # Create collection of lists for blockmodel
+    partition=defaultdict(list)
+    for n_i,p in zip(list(range(len(G))),membership):
+        node = G.nodes()[n_i]
+        if isinstance(node, (int, long)):
+            partition[p].append(node)
+    return list(partition.values())
+
+
+def bn(G, d1, d2):
+    bns = set()
+    for n in d1:
+        for ne1 in nx.all_neighbors(G, n):
+            if ne1 in d2:
+                bns.add(n)
+                bns.add(ne1)
+            for ne2 in nx.all_neighbors(G, ne1):
+                if ne2 in d2:
+                    bns.add(ne1)
+    return bns
+
+
+def bn_score(G, d1, d2):
+    bns = bn(G, d1, d2)
+    degree_weigth = 0.5 * sum([nx.degree(G, n) for n in bns])
+    balance = min(len(d1), len(d2)) / float(max(len(d1), len(d2)))
+    size = len(d1) + len(d2)
+    return degree_weigth * balance * size
+
+
+def total_bn_score(notes):
+    G = extract_graph(notes)
+    nx.draw_networkx(G, with_labels=True)
+    plt.show()
+    bns = bn_listing(m[:100])
+    # Sum of bisociation scores seems to work quite nicely.
+    return sum([s for s, ds in bns])
+
+
+def bn_listing(notes):
+    G = extract_graph(notes)
+    domains = create_hc(G)
+    scores = []
+    for i1 in range(len(domains)):
+        for i2 in range(i1 + 1, len(domains)):
+            ds = domains[i1], domains[i2]
+            scores.append((bn_score(G, *ds), ds))
+    scores.sort(reverse=True)
+    return scores
 
 
 def end_start_height_diff(notes):
@@ -184,3 +278,22 @@ def extract_features(music):
     features.append(note_rythm(notes, 1))
 
     return features
+
+
+class PatternExtractionTest(unittest.TestCase):
+    notes = [("d", "2"), ("d", "16"), ("a", "1")]
+
+    def testIndexZero(self):
+        patterns = get_patterns(self.notes, 0)
+        expected_patterns = set([("d",), ("L2",)])
+        self.assertEquals(expected_patterns, patterns, msg="Wrong patterns with index 0")
+
+    def testIndexOne(self):
+        patterns = get_patterns(self.notes, 1)
+        expected_patterns = set([("d",), ("d", "d"), ("L16",), ("L2", "L16")])
+        self.assertEquals(expected_patterns, patterns, msg="Wrong patterns with index 1")
+
+    def testIndexOneWithMaxLengthOne(self):
+        patterns = get_patterns(self.notes, 1, max_length=1)
+        expected_patterns = set([("d",), ("L16",)])
+        self.assertEquals(expected_patterns, patterns, msg="Wrong max one length patterns with index 1")
