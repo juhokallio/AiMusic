@@ -127,25 +127,25 @@ def first_note(notes):
             return note
 
 
-def get_patterns(notes, index, max_length=4):
+def get_patterns(notes, index, max_length=7):
     patterns = set()
-    for pattern_length in range(min(max_length, index + 1)):
+    for pattern_length in range(1, (min(max_length, index + 1))):
         pitches = []
-        pitch_changes = []
+   #     pitch_changes = []
         lengths = []
-        # TODO: missing as well
+        # TODO: missing pitches, lengths as well, e.g. ["e", "_", "b"]
         last_pitch = None
         for i in range(max(0, index - pattern_length), index + 1):
             pitch, length = notes[i]
-            if last_pitch is not None and pitch != "r":
-                pitch_changes.append("PC" + str(numeric_height(pitch) - numeric_height(last_pitch)))
+     #       if last_pitch is not None and pitch != "r":
+    #            pitch_changes.append("PC" + str(numeric_height(pitch) - numeric_height(last_pitch)))
             pitches.append(pitch)
             lengths.append("L" + str(length))
             if pitch != "r":
                 last_pitch = pitch
         patterns.add(tuple(pitches))
         patterns.add(tuple(lengths))
-        patterns.add(tuple(pitch_changes))
+   #     patterns.add(tuple(pitch_changes))
     return patterns
 
 

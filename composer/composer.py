@@ -1,21 +1,19 @@
 __author__ = 'juho'
 
-from mlmodels import MarkovChain
-from subprocess import call
-import re, json
+import re
+import json
 import random
-from deap import algorithms
-from deap import base
-from deap import creator
-from deap import tools
 import numpy as np
-from music import Motif, extract_features, Variation, extract_notes, extract_graph, total_bn_score
-import sys
+from mlmodels import MarkovChain
+from music import Motif, extract_features, Variation, extract_notes, total_bn_score
+from subprocess import call
+from deap import algorithms, base, creator, tools
 from sklearn.ensemble import RandomForestClassifier
 
 
-BACH_FILE = "../data/bach"
-RATINGS_FILE = "../data/ratings"
+BACH_FILE = "data/bach"
+RATINGS_FILE = "data/ratings"
+CRITIC_FILE = "data/critic"
 LILYPOND_OUTPUT_FILE = "music.ly"
 MIDI_OUTPUT_FILE = "music.midi"
 
@@ -23,7 +21,7 @@ MIDI_OUTPUT_FILE = "music.midi"
 def tokenize(f_name="bach"):
     music = []
     last_length = None
-    for line in open("../data/" + f_name):
+    for line in open("data/" + f_name):
         line = line.replace("\n", "")
         for token in line.split(" "):
             parts = re.findall('\d+|\D+', token)
@@ -41,8 +39,7 @@ def generate(note_count):
     return [(new_pitches[i], new_lengths[i]) for i in range(note_count)]
 
 
-def lilypondify(music):
-    notes = extract_notes(music)
+def lilypondify(notes):
     output = ("\score {"
               "<<"
               "{ \key c \major ")
@@ -56,17 +53,22 @@ def lilypondify(music):
     return output
 
 
-def save_music_to_file(music):
+def save_to_midi(notes):
     f = open(LILYPOND_OUTPUT_FILE, "w")
-    f.write(lilypondify(music))
+
+    f.write(lilypondify(notes))
     f.close()
     call("lilypond " + LILYPOND_OUTPUT_FILE, shell=True)
-    call("timidity " + MIDI_OUTPUT_FILE, shell=True)
+
+
+def play_midi():
+        call("timidity " + MIDI_OUTPUT_FILE, shell=True)
 
 
 def compose_to_file(length):
     music = generate(length)
-    save_music_to_file(music)
+    notes = extract_notes(music)
+    save_to_midi(notes)
 
 
 def bach_mcs():
@@ -122,6 +124,13 @@ def save_rating(music, rating):
         f.write('\n')
 
 
+def save_critic(music_index, critic):
+    print("hmm")
+    with open(CRITIC_FILE, "a") as f:
+        json.dump(critic, f)
+        f.write('\n')
+
+
 def musicify(json):
     music = []
     for el in json:
@@ -166,8 +175,21 @@ def compose_music(target_length, clf_types):
         for t in clf_types:
             clf_p *= clfs[t].predict_proba(x)[0][0]
         """
+        """
+        last_pitch = None
+        log_likelihood = 0
+        for pitch, _ in notes:
+            if last_pitch is not None:
+                log_likelihood += mc_pitch.log_likelihood([last_pitch, pitch])
+            last_pitch = pitch
+
+
+        if bn_score == 0 or length_penalty == 1:
+            return -999999.0,
+        """
+        bn_score = total_bn_score(notes)
         length_penalty = abs(len(notes) - target_length) / target_length
-        return total_bn_score(notes) * (1 - length_penalty),
+        return bn_score * (1 - length_penalty),
 
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 
@@ -222,7 +244,7 @@ def compose_music(target_length, clf_types):
                 del individual[i]
 
         r = random.random()
-        if r < 0.3:
+        if r < 0.5:
             variate()
         elif r < 0.9:
             add()
@@ -233,9 +255,9 @@ def compose_music(target_length, clf_types):
 
     toolbox.register("mutate", mutate)
 
-    generations = 20
+    generations = 50
 
-    pop = toolbox.population(n=30)
+    pop = toolbox.population(n=50)
     hof = tools.HallOfFame(1)
 
     stats = tools.Statistics(lambda ind: ind.fitness.values)
@@ -244,8 +266,8 @@ def compose_music(target_length, clf_types):
     stats.register("min", np.min)
     stats.register("max", np.max)
 
-    crossover_prob = 0.4
-    mutation_prob = 0.6
+    crossover_prob = 0.6
+    mutation_prob = 0.4
 
     algorithms.eaSimple(pop, toolbox, crossover_prob, mutation_prob, generations, stats, halloffame=hof)
 
@@ -279,44 +301,12 @@ def get_classic():
     return music
 
 
-def main(args):
-    feedback_types = get_feedback_types()
-
-    def collect_feedback():
-        cmd = None
-        feedback = {}
-        while cmd != "q":
-            for index, type in enumerate(feedback_types):
-                print("{}: {}".format(index, type))
-            cmd = input("Feedback? (q: quit, n: new)")
-            if cmd == "n":
-                category = input("Category name?")
-                feedback[category] = input("Rating?")
-            if cmd.isdigit():
-                numeric_cmd = int(cmd)
-                if 0 <= numeric_cmd <= len(feedback_types):
-                    feedback[feedback_types[numeric_cmd]] = input("Rating?")
-        return feedback
-
-    if len(args) == 2:
-        cmd = args[1]
-        if cmd == "motiftrain":
-            m = [random_motif(*bach_mcs())]
-            save_music_to_file(m)
-            save_rating(m, collect_feedback())
-        elif cmd == "melodytrain":
-            m = compose_music(200, feedback_types)
-            save_music_to_file(m)
-            save_rating(m, collect_feedback())
-        elif cmd == "classic":
-            m = get_classic()
-            save_music_to_file(m)
-            save_rating(m, collect_feedback())
-
-    else:
-        print("Needs one argument")
-        print("motiftrain Train short melody")
-        print("melodytrain Train longer melody")
-        print("classic Play something with good rating")
-
-if __name__ == "__main__": main(sys.argv)
+def get_composition(index):
+    i = 0
+    with open(RATINGS_FILE) as f:
+        for line in f:
+            i += 1
+            if i == int(index):
+                o = json.loads(line)
+                return extract_music(o["music"])
+    return None

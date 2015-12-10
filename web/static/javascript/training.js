@@ -1,4 +1,3 @@
-var sampleMusic = [{"notes": [["r", "16"], ["c", "16"], ["a,", "8"], ["e", "8"]], "type": "motif"}];
 var sampleCriticSubjects = [
     "rythm",
     "harmony",
@@ -12,8 +11,7 @@ var labelColors = [
     "#8968CD",
     "#F08080"
 ];
-var notes = _.map(sampleMusic[0].notes, converter.convert);
-var ctx, stave;
+var ctx, stave, notes, critic;
 
 var voice = new Vex.Flow.Voice({
     num_beats: 4,
@@ -24,10 +22,24 @@ var voice = new Vex.Flow.Voice({
 // The API is kind of meh here, this has to be specified separately outside the initialization.
 voice.setStrict(false);
 
+function getNotes() {
+    var music = JSON.parse($("#music").html().trim());
+    return _(music)
+        .pluck("notes")
+        .flatten()
+        .map(converter.convert)
+        .value();
+}
+
 $(document).ready(function() {
+    notes = getNotes();
+    critic = _.map(notes, function(n) {
+        return -1;
+    });
+
     var renderer = new Vex.Flow.Renderer("notation", Vex.Flow.Renderer.Backends.CANVAS);
     ctx = renderer.getContext();
-    stave = new Vex.Flow.Stave(10, 0, 500);
+    stave = new Vex.Flow.Stave(10, 0, 1000);
 
     stave.addClef("treble").setContext(ctx).draw();
 
@@ -37,7 +49,7 @@ $(document).ready(function() {
 
     // Format and justify the notes to 500 pixels
     var formatter = new Vex.Flow.Formatter().
-    joinVoices([voice]).format([voice], 500);
+    joinVoices([voice]).format([voice], 1000);
 
     // Render voice
     voice.draw(ctx, stave);
@@ -59,10 +71,7 @@ function alterNote(index) {
                 });
     voice.draw(ctx, stave);
 }
-alterNote(0);
-critic = _.map(notes, function(n) {
-    return -1;
-});
+
 function handleClick(event) {
     var x = event.offsetX;
     var y = event.offsetY;
@@ -95,13 +104,15 @@ function handleClick(event) {
     voice.setStrict(false);
     voice.addTickables(notes);
     var formatter = new Vex.Flow.Formatter().
-    joinVoices([voice]).format([voice], 500);
-    ctx.clearRect(0, 0, 500, 500);
-    //console.log("asd" + affected.getBoundingBox());
+    joinVoices([voice]).format([voice], 1000);
+    ctx.clearRect(0, 0, 1000, 1000);
     stave.draw();
     voice.draw(ctx, stave);
 }
 
-function hitsNote(note, x, y) {
-
+function saveCritic(musicIndex, csrf) {
+    $.post("/training/" + musicIndex + "/save", {
+        "critic": JSON.stringify(critic),
+        "csrfmiddlewaretoken": csrf
+    });
 }

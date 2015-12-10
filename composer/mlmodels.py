@@ -1,5 +1,6 @@
 __author__ = 'juho'
 import random
+import math
 
 
 class MarkovChain():
@@ -20,6 +21,10 @@ class MarkovChain():
                     self.transition_matrix[key] += 1
             if len(memory) >= order:
                 del memory[0]
+        self.masses = [0] * order
+        for key in self.transition_matrix:
+            self.masses[len(key) - 1] += 1
+
 
     def get_order(self, order, order_keeping_p):
         while random.random() > order_keeping_p and order > 1:
@@ -53,6 +58,15 @@ class MarkovChain():
             if key not in self.transition_matrix:
                 return 0
             p *= self.transition_matrix[key]
+        return p
+
+    def log_likelihood(self, tokens):
+        p = 0
+        for i, token in enumerate(tokens):
+            key = self.__get_key(tokens, i, len(tokens))
+            if key not in self.transition_matrix:
+                return -math.log2(self.masses[len(key)])
+            p += math.log2(self.transition_matrix[key] / self.masses[len(key)])
         return p
 
     def __generate_candidates(self, text, index, order):

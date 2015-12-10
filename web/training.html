@@ -15,8 +15,12 @@
 <body>
 <h1>Training</h1>
 <p>Tell what to improve</p>
-    <canvas id="notation" width=700 height=100"></canvas>
+    <div id="music" style="display: none;">
+        {{music}}
+    </div>
+    <canvas id="notation" width=1300 height=100"></canvas>
     <div id="criticTags" style="margin-top: 50px;">
     </div>
+    <button onclick="saveCritic({{id}}, '{{csrf_token}}')">Save critic</button>
 </body>
 </html>
