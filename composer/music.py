@@ -82,7 +82,9 @@ heights = {
 }
 
 
-def numeric_height(pitch):
+def numeric_height(pitch, default=None):
+    if pitch == "r":
+        return default
     octaves_to_raise = 0
     for i in range(len(pitch)):
         if pitch[-i] == "'":
@@ -111,6 +113,14 @@ def extract_notes(music):
     for el in music:
         notes.extend(el.notes)
     return notes
+
+
+def extract_notes_from_dict(music):
+    notes = []
+    for el in music:
+        notes.extend(el["notes"])
+    return notes
+
 
 def speed(notes):
     return sum([int(length) for pitch, length in notes]) / len(notes)
@@ -282,6 +292,27 @@ def extract_features(music):
     features.append(note_rythm(notes, 4))
     features.append(note_rythm(notes, 2))
     features.append(note_rythm(notes, 1))
+
+    return features
+
+
+def extract_note_features(history, note):
+    pitch, length = note
+    features = []
+    features.append(0 if pitch == "r" else 1)
+    features.append(0 if len(history) > 0 and history[-1][0] == "r" else 1)
+    features.append(note_rythm(history, 32))
+    features.append(note_rythm(history, 16))
+    features.append(note_rythm(history, 8))
+    features.append(note_rythm(history, 4))
+    features.append(note_rythm(history, 2))
+    features.append(note_rythm(history, 1))
+    features.extend([note_rythm(history, math.pow(2, i)) for i in range(6)])
+    features.extend([1 if length == math.pow(2, i) else 0 for i in range(6)])
+    features.append(numeric_height(pitch, 0))
+    features.append(numeric_height(history[-1][0], 0) if len(history) > 0 else 0)
+    features.append(numeric_height(history[-1][0], 0) - numeric_height(pitch, 0) if len(history) > 0 else 0)
+    features.append(numeric_height(history[-2][0], 0) - numeric_height(pitch, 0) if len(history) > 1 else 0)
 
     return features
 

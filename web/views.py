@@ -2,6 +2,7 @@ from django.shortcuts import render, render_to_response, get_object_or_404
 from web.models import Composer, Composition, Critic
 from composer.composer import compose_music, get_composition, jsonify
 import json
+from composer.critic import get_classifiers
 from django.views.decorators.cache import cache_control
 from django.template import RequestContext
 from django.http import JsonResponse, HttpResponse
@@ -43,9 +44,9 @@ def main(request):
 
 
 def compose(request, composer_id):
-    composer = Composer.objects.get(pk=composer_id)
-    music_concepts = composer.musicconcept_set.all()
-    music = compose_music(60, music_concepts)
+    composer = get_object_or_404(Composer, id=1)
+    critic_clfs = get_classifiers(composer.compositions.all())
+    music = compose_music(60, critic_clfs)
     del music.fitness
     music = json.dumps(music, default=lambda o: o.__dict__)
     composition = Composition.objects.create(composer=composer, name="this needs development", music=music)

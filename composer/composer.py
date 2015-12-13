@@ -2,13 +2,15 @@ __author__ = 'juho'
 
 import re
 import json
-import random
+import random, math
 import numpy as np
+from . critic import get_classifiers, classify
 from . mlmodels import MarkovChain
 from . music import Motif, extract_features, Variation, extract_notes, total_bn_score
 from subprocess import call
 from deap import algorithms, base, creator, tools
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from functools import reduce
 
 
 BACH_FILE = "data/bach"
@@ -147,7 +149,7 @@ def random_motif(mc_pitch, mc_length):
     return Motif([(pitches[i], lengths[i]) for i in range(length)])
 
 
-def compose_music(target_length, clf_types):
+def compose_music(target_length, critic_clfs):
     """ Compose piece of music
     This slightly hairy piece of genetic algorithm creates the music.
 
@@ -157,14 +159,9 @@ def compose_music(target_length, clf_types):
                     based on these. These should come from data/ratings json, specifically from the ratings values
                     there.
     """
-    # The classifiers, one per each type
-    clfs = dict((t, RandomForestClassifier()) for t in clf_types)
 
     # Markov chains
     mc_pitch, mc_length = bach_mcs()
-
-    for t in clf_types:
-        clfs[t].fit(*extract_training(t))
 
     def eval(individual):
         notes = extract_notes(individual)
@@ -184,12 +181,14 @@ def compose_music(target_length, clf_types):
             last_pitch = pitch
 
 
-        if bn_score == 0 or length_penalty == 1:
-            return -999999.0,
+
         """
+        critic_factor = sum([classify(critic_clfs[t], notes) for t in critic_clfs])
         bn_score = total_bn_score(notes)
         length_penalty = abs(len(notes) - target_length) / target_length
-        return bn_score * (1 - length_penalty),
+        if bn_score == 0 or length_penalty == 1:
+            return -999999.0,
+        return math.log2(bn_score) + critic_factor / 10 + math.log2(1 - length_penalty),
 
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 
@@ -255,7 +254,7 @@ def compose_music(target_length, clf_types):
 
     toolbox.register("mutate", mutate)
 
-    generations = 5
+    generations = 50
 
     pop = toolbox.population(n=40)
     hof = tools.HallOfFame(1)
