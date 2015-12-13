@@ -20,3 +20,8 @@ class Critic(models.Model):
 class MusicConcept(models.Model):
     composer = models.ForeignKey(Composer)
     name = models.CharField(max_length=30)
+
+
+class Midi(models.Model):
+    data = models.BinaryField()
+    composition = models.ForeignKey(Composition, related_name="midi")

@@ -1,6 +1,7 @@
 from django.shortcuts import render, render_to_response, get_object_or_404
-from web.models import Composer, Composition, Critic
-from composer.composer import compose_music, get_composition, jsonify
+from web.models import Composer, Composition, Critic, Midi
+from composer.composer import compose_music, save_to_midi
+from composer.music import extract_notes
 import json
 from composer.critic import get_classifiers
 from django.views.decorators.cache import cache_control
@@ -48,7 +49,22 @@ def compose(request, composer_id):
     critic_clfs = get_classifiers(composer.compositions.all())
     music = compose_music(60, critic_clfs)
     del music.fitness
+    notes = extract_notes(music)
     music = json.dumps(music, default=lambda o: o.__dict__)
     composition = Composition.objects.create(composer=composer, name="this needs development", music=music)
     composition.save()
+    save_to_midi(notes)
+    midi_to_db(composition)
     return main(request)
+
+
+def get_midi(request, composition_id):
+    midi = get_object_or_404(Midi, composition_id=composition_id)
+    return HttpResponse(midi.data, content_type="audio/midi")
+
+
+def midi_to_db(composition):
+    # TODO: to a variable. Also, should contain the composition id or something
+    with open("music.midi", mode='rb') as file:
+        midi = Midi.objects.create(composition=composition, data=file.read())
+        midi.save()
