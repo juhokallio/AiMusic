@@ -21,14 +21,14 @@ def training(request, piece_id):
 
 def save_critic(request, piece_id):
     critic_json = request.POST['critic']
-    composition = Composer.objects.get(pk=piece_id)
+    composition = get_object_or_404(Composition, id=piece_id)
     critic = Critic.objects.create(composition=composition, critic=critic_json)
     critic.save()
     return HttpResponse("ready")
 
 
 def main(request):
-    bach_jr = get_object_or_404(Composer, pk=1)
+    bach_jr = get_object_or_404(Composer, id=1)
     compositions = [{"id": c.id, "name": c.name} for c in bach_jr.compositions.all()]
     return render(request, "web/main.html", {
         "composer": bach_jr,
