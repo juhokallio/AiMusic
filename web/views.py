@@ -9,11 +9,9 @@ from django.http import JsonResponse, HttpResponse
 
 @cache_control(max_age=0, no_cache=True, no_store=True, must_revalidate=True)
 def training(request, piece_id):
-    music = get_composition(piece_id)
-    music_json = json.dumps(jsonify(music))
-    print(music_json)
+    composition = Composition.objects.get(id=piece_id)
     response = render_to_response("web/training.html", {
-        "music": music_json,
+        "music": json.dumps(composition.music),
         "id": piece_id
     }, context_instance=RequestContext(request))
     response["Cache-Control"] = "no-cache, no-store, must-revalidate"
