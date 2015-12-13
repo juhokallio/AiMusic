@@ -7,9 +7,14 @@ class Composer(models.Model):
 
 
 class Composition(models.Model):
-    composer = models.ForeignKey(Composer)
+    composer = models.ForeignKey(Composer, related_name='compositions')
     name = models.CharField(max_length=30)
     music = JsonField()
+
+
+class Critic(models.Model):
+    composition = models.ForeignKey(Composition)
+    critic = JsonField()
 
 
 class MusicConcept(models.Model):

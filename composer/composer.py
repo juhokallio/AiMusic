@@ -4,8 +4,8 @@ import re
 import json
 import random
 import numpy as np
-from mlmodels import MarkovChain
-from music import Motif, extract_features, Variation, extract_notes, total_bn_score
+from . mlmodels import MarkovChain
+from . music import Motif, extract_features, Variation, extract_notes, total_bn_score
 from subprocess import call
 from deap import algorithms, base, creator, tools
 from sklearn.ensemble import RandomForestClassifier
@@ -255,9 +255,9 @@ def compose_music(target_length, clf_types):
 
     toolbox.register("mutate", mutate)
 
-    generations = 50
+    generations = 5
 
-    pop = toolbox.population(n=50)
+    pop = toolbox.population(n=40)
     hof = tools.HallOfFame(1)
 
     stats = tools.Statistics(lambda ind: ind.fitness.values)

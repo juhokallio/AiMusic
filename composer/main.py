@@ -1,6 +1,6 @@
 __author__ = 'juho'
 
-import composer.composer as c
+import composer as c
 import sys
 
 

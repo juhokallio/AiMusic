@@ -16,10 +16,12 @@
         <button class="btn btn-primary" type="submit" onclick="compose()">Compose</button>
 
         <div id="composition-list">
-            <div class="composition card">
-                <h3 class="card-title">Maybe a name that the machine came up with</h3>
-                <a href="training" class="card-link">Feedback</a>
-            </div>
+            {% for composition in compositions %}
+                <div class="composition card">
+                    <h3 class="card-title">{{composition.name}}</h3>
+                    <a href="training/{{composition.id}}" class="card-link">Feedback</a>
+                </div>
+            {% endfor %}
         </div>
     </div>
     <div class="col-md-4">
