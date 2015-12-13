@@ -13,7 +13,7 @@ class Composition(models.Model):
 
 
 class Critic(models.Model):
-    composition = models.ForeignKey(Composition)
+    composition = models.ForeignKey(Composition, related_name="critics")
     critic = JsonField()
 
 

@@ -10,8 +10,10 @@ from django.http import JsonResponse, HttpResponse
 @cache_control(max_age=0, no_cache=True, no_store=True, must_revalidate=True)
 def training(request, piece_id):
     composition = Composition.objects.get(id=piece_id)
+    critic = composition.critics.first()
     response = render_to_response("web/training.html", {
         "music": json.dumps(composition.music),
+        "critic": json.dumps(critic.critic if critic else ""),
         "id": piece_id
     }, context_instance=RequestContext(request))
     response["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -22,7 +24,11 @@ def training(request, piece_id):
 def save_critic(request, piece_id):
     critic_json = request.POST['critic']
     composition = get_object_or_404(Composition, id=piece_id)
-    critic = Critic.objects.create(composition=composition, critic=critic_json)
+    critic = composition.critics.first()
+    if critic is None:
+        critic = Critic.objects.create(composition=composition, critic=critic_json)
+    else:
+        critic.critic = critic_json
     critic.save()
     return HttpResponse("ready")
 

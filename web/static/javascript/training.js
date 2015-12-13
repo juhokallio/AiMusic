@@ -11,16 +11,7 @@ var labelColors = [
     "#8968CD",
     "#F08080"
 ];
-var ctx, stave, notes, critic;
-
-var voice = new Vex.Flow.Voice({
-    num_beats: 4,
-    beat_value: 4,
-    resolution: Vex.Flow.RESOLUTION
-});
-
-// The API is kind of meh here, this has to be specified separately outside the initialization.
-voice.setStrict(false);
+var ctx, stave, notes, critic, voice;
 
 function getNotes() {
     var music = JSON.parse($("#music").html().trim());
@@ -33,7 +24,7 @@ function getNotes() {
 
 $(document).ready(function() {
     notes = getNotes();
-    critic = _.map(notes, function(n) {
+    critic = JSON.parse($("#critic").html().trim()) || _.map(notes, function(n) {
         return -1;
     });
 
@@ -43,17 +34,7 @@ $(document).ready(function() {
 
     stave.addClef("treble").setContext(ctx).draw();
 
-
-    // Add notes to voice
-    voice.addTickables(notes);
-
-    // Format and justify the notes to 500 pixels
-    var formatter = new Vex.Flow.Formatter().
-    joinVoices([voice]).format([voice], 1000);
-
-    // Render voice
-    voice.draw(ctx, stave);
-
+    draw();
     $("canvas#notation").click(handleClick);
     for(var i = 0; i < sampleCriticSubjects.length; i++) {
         appendLabel(sampleCriticSubjects[i], labelColors[i]);
@@ -89,9 +70,15 @@ function handleClick(event) {
         if (critic[affected] === sampleCriticSubjects.length) {
             critic[affected] = -1;
         }
-        var color = critic[affected] === -1 ? "black" : labelColors[critic[affected]];
+    }
+    draw();
+}
 
-        notes[affected].setStyle({
+function draw() {
+    for (var i = 0; i < notes.length; i++) {
+        var color = critic[i] === -1 ? "black" : labelColors[critic[i]];
+
+        notes[i].setStyle({
             fillStyle: color,
             strokeStyle: color
         });
