@@ -1,4 +1,8 @@
 # AiMusic
-The original idea was to create music, more specifically canons in the style of Bach. Canon is a strict form of classical music, and creating one is as much about solving chess like search tree problem as having sophisticated music taste. To me this made it an interesting problem, since computer has here some definite advantages over humans. I managed to create building blocks for the canon generator, and something else as a side product. The system works almost like a game where the players teach the machine to compose classical music.
+Programmatic music composer application. 
 
-Some of the created music samples can be listened in https://soundcloud.com/user-508904177.
+Music is evaluated based on two different kind of approaches: First, based on the feedback collected by the web application tool, a measure for niceness is gathered. After all, music is for pleasing people, and it's hard to be completely cut off of the outer world. Second, an attempt is made to find real and objective creativity from music with bisociations. Connections and their level is measured, and this is an important part of the evaluation.
+
+Based on the fitness function combining niceness classifiers from human feedback and bisociations from graph structure, a genetic algorithm is used to search the possibilities and compose. For speeding up the search, Markov chains from J.S. Bach music are used and music is modelled as motives, small elements that can be then repeated and varied.
+
+Some of the created music samples can be listened from https://soundcloud.com/aimusicaloffering.
