@@ -4,13 +4,11 @@ import re
 import json
 import random
 import numpy as np
-from . critic import get_classifiers, classify
+from . critic import classify
 from . mlmodels import MarkovChain
 from . music import Motif, extract_features, Variation, extract_notes, total_bn_score
 from subprocess import call
 from deap import algorithms, base, creator, tools
-from sklearn.tree import DecisionTreeClassifier
-from functools import reduce
 
 
 BACH_FILE = "data/bach"
@@ -254,7 +252,7 @@ def compose_music(target_length, critic_clfs):
 
     toolbox.register("mutate", mutate)
 
-    generations = 50
+    generations = 5
 
     pop = toolbox.population(n=40)
     hof = tools.HallOfFame(1)
