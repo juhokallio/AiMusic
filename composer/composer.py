@@ -2,7 +2,7 @@ __author__ = 'juho'
 
 import re
 import json
-import random, math
+import random
 import numpy as np
 from . critic import get_classifiers, classify
 from . mlmodels import MarkovChain
@@ -188,7 +188,7 @@ def compose_music(target_length, critic_clfs):
         length_penalty = abs(len(notes) - target_length) / target_length
         if bn_score == 0 or length_penalty == 1:
             return -999999.0,
-        return math.log2(bn_score) + critic_factor / 10 + math.log2(1 - length_penalty),
+        return np.log(bn_score) + critic_factor / 10 + np.log(1 - length_penalty),
 
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 

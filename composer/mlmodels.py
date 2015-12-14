@@ -1,6 +1,6 @@
 __author__ = 'juho'
 import random
-import math
+import numpy as np
 
 
 class MarkovChain():
@@ -65,8 +65,8 @@ class MarkovChain():
         for i, token in enumerate(tokens):
             key = self.__get_key(tokens, i, len(tokens))
             if key not in self.transition_matrix:
-                return -math.log2(self.masses[len(key)])
-            p += math.log2(self.transition_matrix[key] / self.masses[len(key)])
+                return -np.log(self.masses[len(key)])
+            p += np.log(self.transition_matrix[key] / self.masses[len(key)])
         return p
 
     def __generate_candidates(self, text, index, order):

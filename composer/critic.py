@@ -1,5 +1,5 @@
 from sklearn.ensemble import RandomForestClassifier
-import math
+import numpy as np
 from . music import extract_note_features, extract_notes_from_dict
 
 
@@ -47,4 +47,4 @@ def classify(clf, notes):
     for index, note in enumerate(notes):
         X = extract_note_features(notes[:index], note)
         sum += clf.predict_log_proba([X])[0][0]
-    return sum - math.log2(len(notes))
+    return sum - np.log(len(notes))
