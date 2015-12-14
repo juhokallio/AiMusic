@@ -1,4 +1,4 @@
-from django.shortcuts import render, render_to_response, get_object_or_404
+from django.shortcuts import render, render_to_response, get_object_or_404, redirect
 from web.models import Composer, Composition, Critic, Midi
 from composer.composer import compose_music, save_to_midi
 from composer.music import extract_notes
@@ -6,9 +6,12 @@ import json
 from composer.critic import get_classifiers
 from django.views.decorators.cache import cache_control
 from django.template import RequestContext
-from django.http import JsonResponse, HttpResponse
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login
 
 
+@login_required
 @cache_control(max_age=0, no_cache=True, no_store=True, must_revalidate=True)
 def training(request, piece_id):
     composition = Composition.objects.get(id=piece_id)
@@ -23,6 +26,7 @@ def training(request, piece_id):
     return response
 
 
+@login_required
 def save_critic(request, piece_id):
     critic_json = request.POST['critic']
     composition = get_object_or_404(Composition, id=piece_id)
@@ -35,6 +39,7 @@ def save_critic(request, piece_id):
     return HttpResponse("ready")
 
 
+@login_required
 def main(request):
     bach_jr = get_object_or_404(Composer, id=1)
     compositions = [{"id": c.id, "name": c.name} for c in bach_jr.compositions.all()]
@@ -44,6 +49,7 @@ def main(request):
     })
 
 
+@login_required
 def compose(request, composer_id):
     composer = get_object_or_404(Composer, id=1)
     critic_clfs = get_classifiers(composer.compositions.all())
@@ -58,9 +64,29 @@ def compose(request, composer_id):
     return main(request)
 
 
+@login_required
 def get_midi(request, composition_id):
     midi = get_object_or_404(Midi, composition_id=composition_id)
     return HttpResponse(midi.data, content_type="audio/midi")
+
+
+def login_page(request):
+    return render(request, "web/login.html")
+
+
+def attempt_login(request):
+    username = request.POST['username']
+    password = request.POST['password']
+    user = authenticate(username=username, password=password)
+    if user is not None:
+        if user.is_active:
+            login(request, user)
+            return redirect("/")
+            # Redirect to a success page.
+        else:
+            return login_page(request)
+    else:
+        return login_page(request)
 
 
 def midi_to_db(composition):
