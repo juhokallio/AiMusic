@@ -61,7 +61,10 @@ def compose(request, composer_id):
     composition.save()
     save_to_midi(notes)
     midi_to_db(composition)
-    return main(request)
+    return render(request, "web/compositionCard.html", {
+        "composition": composition
+    })
+
 
 
 @login_required
