@@ -1,6 +1,6 @@
 # AiMusic
 
-A music composing program. Work in progress.
+A music composing program. Not truly finished. For the theoretical ideas behind the code, see my [report](docs/seminar-report.pdf) from the related seminar.
 
 ## The Search for Pure Art
 
